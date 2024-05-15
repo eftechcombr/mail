@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mail-server-config
+  namespace: mail
+data:
+  main.cf: |
+    smtpd_banner = $myhostname ESMTP $mail_name (Ubuntu)
+    biff = no
+    append_dot_mydomain = no
+    readme_directory = no
+    smtpd_tls_cert_file=/etc/ssl/certs/ssl-cert-snakeoil.pem
+    smtpd_tls_key_file=/etc/ssl/private/ssl-cert-snakeoil.key
+    smtpd_use_tls=yes
+    smtpd_tls_session_cache_database = btree:${data_directory}/smtpd_scache
+    smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
+    smtpd_relay_restrictions = permit_mynetworks permit_sasl_authenticated defer_unauth_destination
+    myhostname = mail.svc.local
+    alias_maps = hash:/etc/aliases
+    alias_database = hash:/etc/aliases
+    mydestination = mail.svc.local, localhost.localdomain, localhost
+    # relayhost = [smtp.gmail.com]:587
+    mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128
+    mailbox_size_limit = 0
+    recipient_delimiter = +
+    inet_interfaces = all
+  aliases: |
+    postmaster: root
+    root: support@mail.svc.local
+  dovecot.conf: |
+    disable_plaintext_auth = no
+    mail_privileged_group = mail
+    mail_location = mbox:~/mail:INBOX=/var/mail/%u
+    userdb {
+      driver = passwd
+    }
+    passdb {
+      driver = shadow
+    }
+    protocols = imap
+    service imap-login {
+      inet_listener imap {
+        port = 0
+      }
+      inet_listener imaps {
+        port = 993
+        ssl = yes
+      }
+    }
+    ssl_cert = </etc/ssl/certs/ssl-cert-snakeoil.pem
+    ssl_key = </etc/ssl/private/ssl-cert-snakeoil.key

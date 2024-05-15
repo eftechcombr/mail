@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mail-server
+  namespace: mail
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mail-server
+  template:
+    metadata:
+      labels:
+        app: mail-server
+    spec:
+      containers:
+      - name: postfix
+        image: eftechcombr/postfix
+        command: 
+        - postfix 
+        - start-fg
+        volumeMounts:
+        - name: config
+          mountPath: /etc/postfix
+      - name: dovecot
+        image: dovecot/dovecot
+        volumeMounts:
+        - name: config
+          mountPath: /etc/dovecot
+        ports:
+        - containerPort: 993
+          name: pop3
+        - containerPort: 25
+          name: smtp
+      volumes:
+      - name: config
+        configMap:
+          name: mail-server-config
